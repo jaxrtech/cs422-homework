@@ -1,0 +1,142 @@
+---
+title: "CS 422 Section 01"
+author: "Josh Bowden"
+output: html_notebook
+---
+
+# Homework 1
+
+## Recitation Problems
+
+ **1.1.** TODO
+
+ Read Chapter 1. Answer questions end of Chapter 1 & 3. 
+ 
+ **1.2.** TODO
+ 
+ Read Chapter 2.1 - 2.3. Answer questions #2, 3, 7, 12.
+ 
+ **1.3.** TODO
+ 
+ Section 3.7 (pg. 120): Exercies 1, 3, 4-a.
+
+
+## Practicum Porblems
+
+### **2.1.**: Problem 1
+ 
+ (a) Load `college.csv` into `college`
+```{r}
+college <- read.csv('College.csv')
+```
+
+ (b) Look at the data in `college` using the `fix()` function
+```{r}
+rownames(college) <- college[,1]
+college <- college[,-1]
+fix(college)
+college
+```
+ 
+
+ (c) (i) Use the `summary()` function to produce a summary
+```{r}
+summary(college)
+```
+
+ (c) (ii) Use the `pairs()` function to produce a scatterplot matrix of the first ten columns or variables of the data.
+```{r}
+pairs(college[,1:10])
+```
+
+ (c) (iii) Use the `boxplot()` function to produce side-by-side boxplots that help answers the following question: Which alumni
+donate more to their colleges --- *those who go to public schools or those who go to private schools?*
+```{r}
+boxplot(perc.alumni ~ Private,
+        data = college,
+        main = "% of Alumni that Donate at Public & Private Colleges",
+        names = c("Public", "Private"),
+        xlab = "College Type",
+        ylab = "Percent of Alumni that Donate",
+        col = "gray")
+```
+
+ (c) (iv) Use the `boxplot()` function to produce side-by-side boxplots that help answers the following question: *Which colleges --- public or private --- employ more Ph.D.’s?*
+```{r}
+boxplot(PhD ~ Private,
+        data = college,
+        main = "% of Faculty w/ Ph.D's at Public & Private Colleges",
+        names = c("Public", "Private"),
+        xlab = "College Type",
+        ylab = "% of Faculty w/ Ph.D's",
+        col = "gray")
+```
+
+ (c) (v) Create a new qualitative variable, called `Elite` by binning the `Top10perc` variable. We are going to divide universities into
+two groups based on whether or not the proportion of students coming from the top 10% of their high school classes
+exceeds 50%.
+```{r}
+Elite <- rep("No", nrow(college))
+Elite[college$Top10perc > 50] <- "Yes"
+Elite <- as.factor(Elite)
+
+summary(Elite)
+```
+
+ (c) (vi) Use the `hist()` function to produce some histograms with differing numbers of bins for a few of the quantitative variables.
+
+ **TODO**
+ 
+ (c) (vii) Continue exploring the data, and provide a brief summary of what you discover.
+ 
+ **TODO**
+
+
+### **2.2.**: Problem 2: Linear Regression
+
+ (a) Study the attributes of the NBA dataset.
+  * Pick one attribute that you think will be strongly correlated with the response variable (PTS). (You may run pairwise correlations to see which predictor is positively or negatively correlated with the response.)
+  * Print the variable chosen and the correlation plot.
+  * Perform a simple regression on PTS using the predictor.
+  * Print the summary of the regression model and comment on how well the model fits the data
+ 
+ (b) For the model in (a), plot the X-Y (or scatterplot) of the predictor and the regressor. On that plot, overlay the the
+regression line obtained from the model. Label the X and Y axes appropriately and provide a main title for the graph.
+
+**Set seed**
+```{r}
+set.seed(1122)
+index <- sample(1:nrow(df), 250)
+train <- df[index, ]
+test <- df[-index, ]
+```
+
+ (c) You are to pick 3-4 attributes that will act as regressors (predictors, or the independent variable) in your regression
+model. Using the psych package, study the correlation of the attributes versus the response variable to narrow down the list
+of regressors you will use. Once you have the list of regressors, plot the correlation between the response variable and the
+regressors.
+
+ (d) **Multiple regression (multi-variate)**: Run your regression model using the regressors picked in (c).
+ 
+ * Print a summary of your model.
+ * Determine which predictors are statistically significant and which are not.
+ * Eliminate those that are not statistically significant by going back to (c) and examining other options.
+    > Note that if you end up with an R2 of 1.0, you may be overfitting (this means that the model is picking up patterns in the training set that may not be in the test set); if that happens, you will need to change the combination of regressors to give you a R2 that is less than 1.0.
+    
+  * Provide comments on the fit of your model; i.e., evaluate it based on the R2 value, the F-statistic and how statistically sound are the predictors.
+
+ (e) Plot the residuals of the model. Comment on the shape of the graph of the residuals.
+
+ (f) Plot a histogram of the residuals. Does the histogram follow a Gaussian distribution?
+ 
+ (g) Using the `predict()` method, fit the test dataset to the model. Get the predictions and put them in a new dataframe as a
+column vector. Put the test response variable as the second column vector in the new dataframe. Use R commands to find
+out how many of the fitted values matched (exactly) the PTS in the test dataset.
+
+ (h) Use R to calculate the residual vector for the predictions on the test dataset. Then, using the residual vector, calculate and print the following statistics:
+
+  1. RSS (Residual Sum of Errors).
+  2. TSS (Total Sum of Errors).
+  3. The F-statistic.
+  4. The RSE (Residual Standard Error).
+

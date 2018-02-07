@@ -1,18 +1,64 @@
 ---
-title: "R Notebook"
+title: "CS 422 Section 01"
+author: "Josh Bowden"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+ **1.1.** By taking this course, I foremost hope to learn how to use machine learning to create models and make sense of larger datasets. I also hope to learn how to use R more since I do have some experience with the Python side of things. I'd also hope to get a better understanding of how to use fundamental statistics for understanding your data.
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
+## Problem 1
+
+ **1-A**: Load the *cars* dataset and print it.
 ```{r}
-plot(cars)
+data(cars)
+cars
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+ **1-B**: Plot the data in the *cars* dataset. Provide a title for the graph. The title should be "The Cars Dataset".
+```{r}
+plot(cars,
+     main = "The Cars Dataset",
+     xlab = "Speed (mph)",
+     y = "Stopping Distance (ft)")
+```
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+ **1-C**: Print a summary of the cars dataset using the R `summary()` command.
+```{r}
+summary(cars)
+```
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+ **1-D**: What is the maximum speed and minimum distance as shown in the `summary()` command?
+ 
+> The minimum distance is 2ft while the maximum distance is 120ft.
+
+
+## Problem 2
+
+ **2-A**: Read the file into a data frame and add a new row consisting of the following data to the existing rows:
+
+> name: Brad Pitt  
+  id: 40051  
+  gpa: 2.21  
+  grade: C  
+
+
+Before adding the student:
+
+```{r}
+students <- read.csv("student.csv", sep=";", header=T)
+students
+```
+
+
+After adding the new student:
+
+```{r}
+brad_pitt <- data.frame(name = "Brad Pitt",
+                        id = 40051,
+                        gpa = 2.21,
+                        grade = "C")
+students.new <- rbind(students, brad_pitt)
+students.new
+```
+

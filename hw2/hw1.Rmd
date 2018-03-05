@@ -1,0 +1,243 @@
+---
+title: "CS 422 Section 01"
+author: "Josh Bowden"
+output: html_notebook
+---
+
+# Homework 2 - Practicum Problems
+
+## Part 2.1 - Decision tree classification
+
+Setting the random seed as specified for consistency
+```{r}
+set.seed(1122)
+```
+
+We will first load the unleaned training and testing data sets:
+```{r}
+df.train.unclean <- read.csv('adult-train.csv')
+df.test.unclean <- read.csv('adult-test.csv')
+```
+
+
+ (a) Remove all the observations that have '?' in them.
+```{r}
+dirty.train <- apply(df.train.unclean, 2, function(col) which(col == "?"))
+apply(df.train.unclean, 2, function(col) sum(col == "?"))
+
+cat(paste("Train - Unclean -> n =", nrow(df.train.unclean)))
+dirty.train.rows <- union(union(dirty.train$workclass,
+                                dirty.train$occupation),
+                                dirty.train$native_country)
+
+df.train <- df.train.unclean
+df.train <- df.train[ -dirty.train.rows, ]
+cat(paste("Train - Clean -> n =", nrow(df.train), "(expect 30,161)"))
+
+##
+
+dirty.test <- apply(df.test.unclean, 2, function(col) which(col == "?"))
+apply(df.test.unclean, 2, function(col) sum(col == "?"))
+
+cat(paste("Test - Unclean -> n =", nrow(df.test.unclean)))
+dirty.test.rows <- union(union(dirty.test$workclass,
+                               dirty.test$occupation),
+                               dirty.test$native_country)
+
+df.test <- df.test.unclean
+df.test <- df.test[ -dirty.test.rows, ]
+cat(paste("Test - Clean -> n =", nrow(df.test), "(expect 15,060)"))
+
+```
+
+ (b)  Build a decision tree model using rpart() to predict whether a person makes <=50K or >50K using all of the predictors. Answer the following questions through model introspection
+ 
+```{r}
+library(rpart)
+
+model <- rpart(income ~ ., data = df.train)
+print(model)
+```
+
+ (b) (i) Name the top three important predictors in the model?
+    * `relationship`
+    * `capital_gain`
+    * `education`
+
+ (b) (ii) The first split is done on which predictor?  What is the predicted class of the first node?  What is the distribution of observations between the “<=50K” and “>50K” classes at this node?
+ 
+  The first split is done on `relationship` = {`Not-in-family,Other-relative,Own-child,Unmarried`} is predicted to be "<=50K". The distribution of observations is 93.03% and 6.96% for <=50K and >50K respectively.
+
+ (c) Use the trained model from (b) to predict the test dataset.Answer the following questions based on the outcome of the prediction and examination of the confusion matrix: (for floating point answers, assume 3 decimal place accuracy):
+
+```{r}
+library(caret)
+library(e1071)
+
+pred <- predict(model, df.test, type="class")
+confusionMatrix(pred, df.test$income)
+```
+
+ 
+ (c) (i) What is the balanced accuracy of the model? (Note that in our test dataset, we have more observations of class “<=50” than we do of class “>50”.  Thus, we are more interested in the balanced accuracy, instead of just accuracy.  Balanced accuracy is calculated as the average of sensitivity and specificity.)
+
+```{r}
+balanced.accuracy <- 0.7259
+```
+
+ According to the confusion matrix, the balanced accuracy is 72.6%
+ 
+ (ii) What is the balanced error rate of the model?  (Again, because our test data is imbalanced, a balanced error rate makes more sense.  Balanced error rate = 1.0 – balanced accuracy.)
+
+```{r}
+1 - balanced.accuracy
+```
+ 
+ According to the confusion matrix, the balanced error rate is 27.4%
+ 
+ (c) (iii) What is the sensitivity? Specificity?
+
+ According to the confusion matrix, sensitivity is 0.948 and specificity 0.504.
+  
+ (c) (iv) What is the AUC of the ROC curve.  Plot the ROC curve.
+```{r}
+library("ROCR")
+
+# ROCR
+pred.rocr <- predict(model, newdata=df.test, type="prob")[,2]
+f.pred <- prediction(pred.rocr, df.test$income)
+f.perf <- performance(f.pred, "tpr", "fpr")
+plot(f.perf, colorize=T, lwd=3)
+
+# AUC
+auc <- performance(f.pred, measure = "auc")
+cat(paste("Area under the ROC curve (AUC):", round(auc@y.values[[1]], 3)))
+```
+
+ (c) (d) Print the complexity table of the model you trained. Examine the complexity table and state whether the tree would benefit from a pruning. If the tree would benefit from a pruning, at what complexity level would you prune it? If the tree would not benefit from a pruning, provide reason why you think this is the case.
+ 
+```{r}
+model$cptable
+```
+
+ 
+ (c) (e) Besides the class imbalance problem we see in the test dataset, we also have a class imbalance problem in the training dataset.  To solve this class imbalance problem in the training dataset, we will use undersampling, i.e., we will undersample the majority class such that both classes have the same number of observations in the training dataset. 
+ (c) (e) (i) In the training dataset, how many observations are in the class “<=50K”?  How many are in the class “>50K”?
+```{r}
+n.lower <- sum(df.train$income == "<=50K")
+cat("N(<=50K) =", n.lower)
+cat("\n")
+
+n.higher <- sum(df.train$income == ">50K")
+cat("N(>50K) =", n.higher)
+```
+
+ 
+ (c) (e) (ii) Create a new training dataset that has equal representation of both classes; i.e., number of observations of class “<=50K” must be the same as number of observations of class “>50K”.  Call this new training dataset.  (Use the sample() method on the majority class to sample as many observations as there are in the minority class.  Do not use any other method for undersampling as your results will not match expectation if you do so.)
+ 
+ (c) (e) (iii) Train a new model on the new training dataset, and then fit this model to the testing dataset. Answer the following questions based on the outcome of the prediction and examination of the confusion matrix: (for floating point answers, assume 3 decimal place accuracy):
+ 
+ (c) (e) (iii) (i) What is the balanced accuracy of this model?
+ 
+ (c) (e) (iii) (ii) What is the balanced error rate of this model?
+ 
+ (c) (e) (iii) (iii) What is the sensitivity?  Specificity?
+ 
+ (c) (e) (iii) (iv) What is the AUC of the ROC curve.  Plot the ROC curve.
+
+
+### **2.2.**: Random Forest
+
+*Use the same (cleaned) dataset from Question 2.1 for Random Forest (RF).  Ensure that the seed is set to 1122 before attempting to do the problems below.*
+```{r}
+set.seed(1122)
+```
+
+ (a) Create a RF model using the entire training dataset. When you create the model, use the importance=T parameter to randomForest(). This parameter allows you to examine which variables were important to the model. Once you have created the model, use the testing dataset to predict the response class. Execute the confusionMatrix() method on the predictions versus the true class response and answer the following questions
+```{r}
+rm(model, pred)
+model <- randomForest(income ~ ., data=df.train, importance = T)
+pred <- predict(model, df.test, type="class")
+confusionMatrix(pred, as.factor(df.test$income))
+```
+
+ (a) (i) What is the balanced accuracy of the model?
+ 
+ The balanced accuracy is 0.633.
+ 
+ (a) (ii) What is the accuracy of the model?
+ 
+ The accurace is 0.818.
+ 
+ (a) (iii) What is the sensitivity and specificity of the model?
+ 
+ The sensitivity is 0.997 and the specificitiy is 0.269.
+ 
+ (a) (iv) What is the response class distribution in the test dataset?  (That is, how many observations are labeled “>50K” and how many are labeled “<=50K”)?
+```{r}
+rm(n.lower, n.higher)
+n.lower <- sum(df.test$income == "<=50K")
+cat("N(<=50K) =", n.lower)
+cat("\n")
+
+n.higher <- sum(df.test$income == ">50K")
+cat("N(>50K) =", n.higher)
+```
+
+ 
+ (a) (v) Given the response class distribution, does the sensitivity and specificity make sense?
+
+ Yes, because there is a great discremency between the class of the <=50K income level and the >50K income levels.
+ 
+ (a) (vi) RF allow you to see what the variable importance is by running `varImpPlot(model)`. Run this method on the model you created and answer the following questions:
+```{r}
+varImpPlot(model)
+```
+ 
+ (a) (vi) (1) For `MeanDecreaseAccuracy`, which is the most important variable and which is the least important one?
+ 
+ For `MeanDecreaseAccuracy`, the most important variable is `capital_gain` by a large margin, and the least important variable is `native_country`.
+ 
+ (a) (vi) (2) For `MeanDecreaseGini`, which is the most important variable and which is the least important one?
+ 
+  For `MeanDecreaseGini`, the most important variable is `capital_gain`, and the least important variable is `race` (nearly the same as `sex`).
+ 
+ (a) (vii) Examine the model you created by invoking the `print()` method on it. What is the number of variables tried at each split?
+```{r}
+print(model)
+cat("\nIn the model, there was", model$mtry, "variables tried at each split")
+```
+
+ (b) You will now tune the RF model by finding out what is the best  value to use for number of predictors to select at each split. To do so, you will use a method called `tuneRF()`.  Make sure you read the manual page for `tuneRF()`. 
+ 
+ Where X is the training data frame of predictor variables and Y is the response variable.  You can look up the remaining options in the manual page, but do not change the value of the remaining options.  tuneRF() starts with the default value of mtry and  search for the optimal value (with respect to Out-of-Bag error estimate) of mtry for randomForest. 
+ 
+```{r}
+mtry <- tuneRF(x = subset(df.train, select=-c(income)),
+               y = df.train$income,
+               mtryStart = model$mtry, 
+               ntreeTry=500, stepFactor=1.5, improve=0.01,
+               trace=TRUE, plot=TRUE)
+print(mtry)
+```
+ 
+ 
+## Part 2.3 - Association Rule
+
+You are provided a file `groceries.csv` in which you will find 9,835 transactions for market-basket analysis.  Each transaction contains between 1 – 32 items.  This file is organized as a transaction database (i.e., each line contains a comma-separated list of items).  To read this file into R, use the `read.transactions()` method in the `arules` library. 
+(Make sure you install the library if you do not have it already in your R environment, and also make sure you load the library into your R environment for access to the methods.) 
+
+```{r}
+library(arules)
+df <- read.transactions("groceries.csv")
+```
+
+
+ (i) Run `apriori()` on the transaction set.  By default, `apriori()` uses a minimum support value of `0.1`. How many rules do you get at this support value? 
+
+```{r}
+rules <- apriori(df)
+summary(rules)
+```
+
+
